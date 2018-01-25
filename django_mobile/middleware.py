@@ -2,9 +2,17 @@ import re
 from django_mobile import flavour_storage
 from django_mobile import set_flavour, _init_flavour
 from django_mobile.conf import settings
-
+from django.utils.deprecation import MiddlewareMixin
 
 class SetFlavourMiddleware(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
+  
+    def __call__(self, request):
+        self.process_request(request)
+        response = self.get_response(request)
+        return response
+  
     def process_request(self, request):
         _init_flavour(request)
 
@@ -44,12 +52,19 @@ class MobileDetectionMiddleware(object):
     ))
     http_accept_regex = re.compile("application/vnd\.wap\.xhtml\+xml", re.IGNORECASE)
 
-    def __init__(self):
+    def __init__(self, get_response):
+        self.get_response = get_response
         user_agents_test_match = r'^(?:%s)' % '|'.join(self.user_agents_test_match)
         self.user_agents_test_match_regex = re.compile(user_agents_test_match, re.IGNORECASE)
         self.user_agents_test_search_regex = re.compile(self.user_agents_test_search, re.IGNORECASE)
         self.user_agents_exception_search_regex = re.compile(self.user_agents_exception_search, re.IGNORECASE)
-
+        
+        
+    def __call__(self, request):
+        self.process_request(request)
+        response = self.get_response(request)
+        return response
+      
     def process_request(self, request):
         is_mobile = False
 
